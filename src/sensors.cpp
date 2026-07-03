@@ -29,20 +29,20 @@ void updateSensorReadings() {
   // Update soil moisture
   int moisture = analogRead(SOIL_SENSOR_PIN);
   
-  if (!soilDry && moisture <= 1000) {
-    soilDry = true;
+  if (!state.soilDry && moisture <= 1000) {
+    state.soilDry = true;
   }
-  if (soilDry && moisture >= 1200) {
-    soilDry = false;
+  if (state.soilDry && moisture >= 1200) {
+    state.soilDry = false;
   }
   
   // Update water distance
-  waterDistance = measureWaterDistance();
+  state.waterDistance = measureWaterDistance();
   
   // Update tank empty status
-  if (waterDistance > 15) {
-    tankEmpty = true;
+  if (state.waterDistance > 15) {
+    state.tankEmpty = true;
   } else {
-    tankEmpty = false;
+    state.tankEmpty = false;
   }
 }

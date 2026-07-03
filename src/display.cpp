@@ -3,14 +3,16 @@
 #include "state.h"
 #include <Arduino.h>
 
+static String topMessage = "";
+static String botMessage = "";
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void updateLEDs() {
-  digitalWrite(YELLOW_LED, soilDry);
-  digitalWrite(RED_LED, tankEmpty);
-  digitalWrite(BLUE_LED, pumpRunning);
+  digitalWrite(YELLOW_LED, state.soilDry);
+  digitalWrite(RED_LED, state.tankEmpty);
+  digitalWrite(BLUE_LED, state.pumpRunning);
 
-  bool healthy = !soilDry && !tankEmpty && !pumpRunning;
+  bool healthy = !state.soilDry && !state.tankEmpty && !state.pumpRunning;
   digitalWrite(GREEN_LED, healthy);
 }
 
@@ -18,16 +20,16 @@ void updateDisplay() {
   String newTopMessage;
   String newBotMessage;
 
-  if (soilDry) {
+  if (state.soilDry) {
     newTopMessage = "Soil Dry";
   } else {
     newTopMessage = "Soil Ok";
   }
 
-  if (pumpRunning) {
+  if (state.pumpRunning) {
     newBotMessage = "Watering";
   } else {
-    float waterLevelPercentage = (((WATER_CONTAINER_HEIGHT - waterDistance) / WATER_CONTAINER_HEIGHT) * 100);
+    float waterLevelPercentage = (((WATER_CONTAINER_HEIGHT - state.waterDistance) / WATER_CONTAINER_HEIGHT) * 100);
     waterLevelPercentage = constrain(waterLevelPercentage, 0, 100);
     newBotMessage = "Tank: " + String((int)waterLevelPercentage) + "%";
   }

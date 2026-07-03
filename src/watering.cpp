@@ -12,12 +12,12 @@ void changePumpState(bool condition) {
 }
 
 void updateWatering() {
-  if (soilDry && !tankEmpty) {
+  if (state.soilDry && !state.tankEmpty) {
     Serial.println("Soil Dry and tank not empty");
-    pumpRunning = true;
+    state.pumpRunning = true;
     changePumpState(true);
   } else {
-    pumpRunning = false;
+    state.pumpRunning = false;
     changePumpState(false);
   }
 }

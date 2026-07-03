@@ -1,5 +1,6 @@
 {
-  "version": 1,
+  "version": 1,  
+  "author": "Luis Kcomt Lam",
   "editor": "wokwi",
   "parts": [
     {
@@ -102,6 +103,8 @@
     }
   ],
   "connections": [
+    [ "esp1:TX", "$serialMonitor:RX", "", [] ], 
+    [ "esp1:RX", "$serialMonitor:TX", "", [] ], 
     ["lcd1:SCL", "esp1:22", "green", ["h0"]],
     ["lcd1:SDA", "esp1:21", "green", ["h0"]],
     ["esp1:25", "r1:2", "green", ["v0"]],

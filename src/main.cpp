@@ -7,8 +7,7 @@
 #include "sensors.h"
 #include "watering.h"
 #include "display.h"
-
-WiFiClientSecure espClient;
+#include "mqtt.h"      // <-- Add this
 
 void setup() {
   Serial.begin(115200);
@@ -29,24 +28,27 @@ void setup() {
   pinMode(WATER_SENSOR_ECHO, INPUT);
   pinMode(RELAY_PIN, OUTPUT);
   pinMode(SOIL_SENSOR_PIN, INPUT);
+
+  setupMQTT();   // <-- Connect WiFi + HiveMQ
 }
 
-void loop() {
-  // Update sensor readings
-  updateSensorReadings();
-  
-  // Log sensor states
-  Serial.print("soildry: ");
-  Serial.println(soilDry);
-  Serial.print("tankEmpty: ");
-  Serial.println(tankEmpty);
-  
-  // Update watering based on sensor states
-  updateWatering();
-  
-  // Update LEDs and display
-  updateLEDs();
-  updateDisplay();
-  
-  delay(1000);
+void loop()
+{
+    updateSensorReadings();
+
+    updateWatering();
+
+    updateLEDs();
+
+    updateDisplay();
+
+    mqttLoop();
+
+    static unsigned long lastPublish = 0;
+
+    if (millis() - lastPublish >= 5000)
+    {
+        publishState(state);
+        lastPublish = millis();
+    }
 }
