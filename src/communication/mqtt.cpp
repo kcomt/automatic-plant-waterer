@@ -90,27 +90,6 @@ void mqttLoop()
     mqtt.loop();
 }
 
-void publishState(const PlantState &state)
-{
-    if (!mqtt.connected())
-        return;
-
-    JsonDocument doc;
-
-    doc["soilMoistureRaw"] = state.soilMoistureRaw;
-    doc["soilMoisturePercent"] = state.soilMoisturePercent;
-    doc["soilDry"] = state.soilDry;
-    doc["tankEmpty"] = state.tankEmpty;
-    doc["pumpRunning"] = state.pumpRunning;
-    doc["tankPercentage"] = state.tankPercentage;
-
-    String payload;
-    serializeJson(doc, payload);
-
-    Serial.println("Publishing state: " + payload);
-    mqtt.publish("plant/state", payload.c_str());
-}
-
 bool isMQTTConnected()
 {
     return mqtt.connected();
@@ -133,15 +112,22 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 
 void processCommand(const String &command)
 {
+    Serial.print("Received command: ");
     if (command == "pump:on")
     {
+        Serial.println("Pump ON command received.");
         if (!state.tankEmpty)
         {
             startWatering();
+            publishResponse("pump:on", true);
         }
         else
         {
             Serial.println("Cannot water: tank is empty.");
+            state.tankEmpty = true;
+
+            publishState(state);
+            publishResponse("pump:on", false, "TANK_EMPTY");
         }
     }
     else if (command == "pump:off")
@@ -149,4 +135,52 @@ void processCommand(const String &command)
         stopWatering();
         publishState(state);
     }
+}
+
+void publishState(const PlantState &state)
+{
+    if (!mqtt.connected())
+        return;
+
+    JsonDocument doc;
+
+    doc["soilMoistureRaw"] = state.soilMoistureRaw;
+    doc["soilMoisturePercent"] = state.soilMoisturePercent;
+    doc["soilDry"] = state.soilDry;
+    doc["tankEmpty"] = state.tankEmpty;
+    doc["pumpRunning"] = state.pumpRunning;
+    doc["tankPercentage"] = state.tankPercentage;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    Serial.println("Publishing state: " + payload);
+    mqtt.publish("plant/state", payload.c_str());
+}
+
+void publishResponse(
+    const String &command,
+    bool success,
+    const String &reason)
+{
+    if (!mqtt.connected())
+        return;
+
+    StaticJsonDocument<256> doc;
+
+    doc["command"] = command;
+    doc["success"] = success;
+
+    if (!reason.isEmpty())
+    {
+        doc["reason"] = reason;
+    }
+
+    String payload;
+    serializeJson(doc, payload);
+
+    Serial.print("Publishing response: ");
+    Serial.println(payload);
+
+    mqtt.publish("plant/response", payload.c_str());
 }

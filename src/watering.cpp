@@ -2,6 +2,7 @@
 #include "config.h"
 #include "state.h"
 #include "communication/mqtt.h"
+#include "scheduler.h"
 
 constexpr unsigned long WATERING_DURATION = 3UL * 1000UL; // 10 seconds
 static unsigned long wateringStartTime = 0;
@@ -58,6 +59,8 @@ void stopWatering()
   state.pumpRunning = false;
 
   changePumpState(false);
+
+  scheduleDelayedMonitoring(2000); // Read sensors in 2 s
 
   publishState(state);
 }

@@ -6,8 +6,12 @@
 void setupMQTT();
 void mqttLoop();
 
-void publishState(const PlantState& state);
-
 bool isMQTTConnected();
 
-void mqttCallback(char* topic, uint8_t* payload, unsigned int length);
+void mqttCallback(char *topic, uint8_t *payload, unsigned int length);
+
+void publishState(const PlantState &state);
+void publishResponse(
+    const String &command,
+    bool success,
+    const String &reason = "");

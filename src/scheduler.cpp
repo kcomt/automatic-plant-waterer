@@ -10,6 +10,7 @@
 const unsigned long MONITOR_INTERVAL = 5UL * 1000UL; // 30 seconds
 
 static unsigned long lastMonitor = 0;
+static unsigned long delayedMonitorAt = 0;
 
 void schedulerInit()
 {
@@ -37,19 +38,36 @@ void evaluateWatering()
     }
 }
 
+void scheduleDelayedMonitoring(unsigned long delayMs)
+{
+    delayedMonitorAt = millis() + delayMs;
+}
+
+void performMonitoring()
+{
+    updateSensorReadings();
+    evaluateWatering();
+    applyState();
+    publishState(state);
+}
+
 void schedulerRun()
 {
-    // tiny state machine to control watering
     updateWatering();
-    // Read sensors periodically
-    if (millis() - lastMonitor >= MONITOR_INTERVAL)
-    {
-        Serial.println("Serial looping monitoring interval");
-        updateSensorReadings();
-        evaluateWatering();
-        applyState();
-        publishState(state);
 
-        lastMonitor = millis();
+    unsigned long now = millis();
+
+    if (now - lastMonitor >= MONITOR_INTERVAL)
+    {
+        Serial.println("Performing scheduled monitoring");
+        performMonitoring();
+        lastMonitor = now;
+    }
+
+    if (delayedMonitorAt != 0 && now >= delayedMonitorAt)
+    {
+        Serial.println("Performing delayed monitoring");
+        performMonitoring();
+        delayedMonitorAt = 0;
     }
 }

@@ -1,7 +1,11 @@
 #pragma once
 
 void schedulerInit();
-void schedulerRun();
 
-// Apply the current state to the system (watering, LEDs, etc.)
 void applyState();
+
+void scheduleDelayedMonitoring(unsigned long delayMs);
+
+void performMonitoring();
+
+void schedulerRun();
