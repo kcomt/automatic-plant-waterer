@@ -3,50 +3,63 @@
 #include "state.h"
 #include "communication/mqtt.h"
 
-constexpr unsigned long WATERING_DURATION = 10UL * 1000UL; // 10 seconds
+constexpr unsigned long WATERING_DURATION = 3UL * 1000UL; // 10 seconds
 static unsigned long wateringStartTime = 0;
 
-void changePumpState(bool condition) {
-  if (condition) {
+void changePumpState(bool condition)
+{
+  if (condition)
+  {
     digitalWrite(RELAY_PIN, HIGH);
-  } else {
+  }
+  else
+  {
     digitalWrite(RELAY_PIN, LOW);
   }
 }
 
 void updateWatering()
 {
-    if (!state.pumpRunning)
-        return;
+  if (!state.pumpRunning)
+    return;
 
-    if (millis() - wateringStartTime >= WATERING_DURATION)
-    {
-        stopWatering();
-    }
+  Serial.print("Watering for: ");
+  Serial.println(millis() - wateringStartTime);
+  Serial.print("Needed: ");
+  Serial.println(WATERING_DURATION);
+  Serial.print("Watering started at: ");
+  Serial.println(wateringStartTime);
+  Serial.print("Current time: ");
+  Serial.println(millis());
+
+  if (millis() - wateringStartTime >= WATERING_DURATION)
+  {
+    stopWatering();
+  }
 }
 
 void startWatering()
 {
-    if (state.pumpRunning)
-        return;     // Already watering
+  if (state.pumpRunning)
+    return; // Already watering
 
-    Serial.println("Starting watering");
+  Serial.println("Starting watering");
 
-    state.pumpRunning = true;
-    wateringStartTime = millis();
+  state.pumpRunning = true;
+  wateringStartTime = millis();
 
-    changePumpState(true);
+  changePumpState(true);
 }
 
 void stopWatering()
 {
-    Serial.println("Stopping watering");
+  Serial.println("Stopping watering, publishing state");
 
-    state.pumpRunning = false;
+  state.pumpRunning = false;
 
-    changePumpState(false);
+  changePumpState(false);
 
-    publishState(state);
+  publishState(state);
 }
 
 /*
@@ -58,11 +71,10 @@ void updateWatering() {
 
     if(state.manualWatering){
       //do some logic
-      state.manualWatering = false; 
+      state.manualWatering = false;
     }
   } else {
     state.pumpRunning = false;
     changePumpState(false);
   }
 }*/
-

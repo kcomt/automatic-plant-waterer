@@ -3,7 +3,10 @@
 #include "state.h"
 #include <Arduino.h>
 
-float measureWaterDistance() {
+#include <stdint.h> // or #include <cstdint>
+
+float measureWaterDistance()
+{
   digitalWrite(WATER_SENSOR_TRIG, LOW);
   delayMicroseconds(2);
 
@@ -13,7 +16,8 @@ float measureWaterDistance() {
 
   long duration = pulseIn(WATER_SENSOR_ECHO, HIGH, 30000);
 
-  if (duration == 0) {
+  if (duration == 0)
+  {
     Serial.println("Sensor timeout");
     return WATER_CONTAINER_HEIGHT;
   }
@@ -25,24 +29,48 @@ float measureWaterDistance() {
   return distance;
 }
 
-void updateSensorReadings() {
+void updateSensorReadings()
+{
   // Update soil moisture
   int moisture = analogRead(SOIL_SENSOR_PIN);
-  
-  if (!state.soilDry && moisture <= 1000) {
+
+  state.soilMoistureRaw = moisture;
+  state.soilMoisturePercent = map(
+      moisture,
+      config.dryThreshold, // 1000 -> 0%
+      config.wetThreshold, // 1200 -> 100%
+      0,
+      100);
+
+  state.soilMoisturePercent = constrain(
+      state.soilMoisturePercent,
+      0,
+      100);
+
+  Serial.print("Soil moisture raw: ");
+  Serial.println(state.soilMoistureRaw);
+  Serial.print("Soil moisture percent: ");
+  Serial.println(state.soilMoisturePercent);
+
+  if (!state.soilDry && moisture <= 1000)
+  {
     state.soilDry = true;
   }
-  if (state.soilDry && moisture >= 1200) {
+  if (state.soilDry && moisture >= 1200)
+  {
     state.soilDry = false;
   }
-  
+
   // Update water distance
   state.waterDistance = measureWaterDistance();
-  
+
   // Update tank empty status
-  if (state.waterDistance > 15) {
+  if (state.waterDistance > 15)
+  {
     state.tankEmpty = true;
-  } else {
+  }
+  else
+  {
     state.tankEmpty = false;
   }
 }
