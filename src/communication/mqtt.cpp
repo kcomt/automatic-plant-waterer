@@ -1,21 +1,29 @@
-#include "mqtt.h"
+#include "communication/mqtt.h"
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
+#include "../scheduler.h"
+#include "../watering.h"
+
+void processCommand(const String& command);
+
 WiFiClientSecure wifiClient;
 PubSubClient mqtt(wifiClient); // No template arguments, just pass wifiClient
 
-const char* WIFI_SSID = "...";
-const char* WIFI_PASSWORD = "...";
+//const char* WIFI_SSID = "CGA2121_kt9DAHP";
+//const char* WIFI_PASSWORD = "cg7MpJHy2j25Mj9FfZ";
 
-const char* MQTT_HOST = "...";
+const char* WIFI_SSID = "Wokwi-GUEST";
+const char* WIFI_PASSWORD = "";
+
+const char* MQTT_HOST = "cea62e455cca42e98b0ad9bd6d02ea70.s1.eu.hivemq.cloud";
 const int MQTT_PORT = 8883;
 
-const char* MQTT_USERNAME = "...";
-const char* MQTT_PASSWORD = "...";
+const char* MQTT_USERNAME = "plantwaterer";
+const char* MQTT_PASSWORD = "SuperSecretPassword123";
 
 void connectWiFi()
 {
@@ -38,6 +46,7 @@ void connectMQTT()
     wifiClient.setInsecure();   // For now. Later we'll use HiveMQ's certificate.
 
     mqtt.setServer(MQTT_HOST, MQTT_PORT);
+    mqtt.setCallback(mqttCallback);
 
     while (!mqtt.connected())
     {
@@ -86,7 +95,7 @@ void publishState(const PlantState& state)
     if (!mqtt.connected())
         return;
 
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
 
     doc["soilMoisture"] = state.soilMoisture;
     doc["soilDry"] = state.soilDry;
@@ -97,10 +106,43 @@ void publishState(const PlantState& state)
     String payload;
     serializeJson(doc, payload);
 
+    Serial.println("Publishing state: " + payload);
     mqtt.publish("plant/state", payload.c_str());
 }
 
 bool isMQTTConnected()
 {
     return mqtt.connected();
+}
+
+void mqttCallback(char* topic, uint8_t* payload, unsigned int length)
+{
+    String message;
+
+    for (unsigned int i = 0; i < length; i++)
+    {
+        message += (char)payload[i];
+    }
+
+    if (strcmp(topic, "plant/command") == 0)
+    {
+        processCommand(message);
+    }
+}
+
+void processCommand(const String& command)
+{
+    if (command == "pump:on")
+    {
+        if(!state.tankEmpty){
+            startWatering();
+        } else {
+            Serial.println("Cannot water: tank is empty.");
+        }
+    }
+    else if (command == "pump:off")
+    {
+        stopWatering();
+        publishState(state);
+    }
 }

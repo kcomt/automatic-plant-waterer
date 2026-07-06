@@ -2,53 +2,50 @@
 #include <Wire.h>
 #include <WiFiClientSecure.h>
 
-#include "config.h"
-#include "state.h"
-#include "sensors.h"
-#include "watering.h"
-#include "display.h"
-#include "mqtt.h"      // <-- Add this
+#include "config.h" 
+#include "state.h" 
+#include "display.h" 
+#include "communication/mqtt.h" // <-- Add this
+#include "scheduler.h"
+#include "sensors.h" 
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Hello, ESP32!");
+void setup()
+{
+    Serial.begin(115200);
+    Serial.println("Hello, ESP32!");
 
-  // Initialize I2C and LCD
-  Wire.begin(21, 22);
-  lcd.init();
-  lcd.backlight();
+    // Initialize I2C
+    Wire.begin(21, 22);
 
-  // Initialize pins
-  pinMode(GREEN_LED, OUTPUT);
-  pinMode(YELLOW_LED, OUTPUT);
-  pinMode(RED_LED, OUTPUT);
-  pinMode(BLUE_LED, OUTPUT);
-  
-  pinMode(WATER_SENSOR_TRIG, OUTPUT);
-  pinMode(WATER_SENSOR_ECHO, INPUT);
-  pinMode(RELAY_PIN, OUTPUT);
-  pinMode(SOIL_SENSOR_PIN, INPUT);
+    // LCD
+    lcd.init();
+    lcd.backlight();
 
-  setupMQTT();   // <-- Connect WiFi + HiveMQ
+    // LEDs
+    pinMode(GREEN_LED, OUTPUT);
+    pinMode(YELLOW_LED, OUTPUT);
+    pinMode(RED_LED, OUTPUT);
+    pinMode(BLUE_LED, OUTPUT);
+
+    // Sensors
+    pinMode(WATER_SENSOR_TRIG, OUTPUT);
+    pinMode(WATER_SENSOR_ECHO, INPUT);
+    pinMode(SOIL_SENSOR_PIN, INPUT);
+
+    // Relay
+    pinMode(RELAY_PIN, OUTPUT);
+
+    setupMQTT();
+
+    schedulerInit();
+
+    // Should read sensors and update display at startup
+    //updateSensorReadings();
+    //applyState();
 }
 
 void loop()
 {
-    updateSensorReadings();
-
-    updateWatering();
-
-    updateLEDs();
-
-    updateDisplay();
-
-    mqttLoop();
-
-    static unsigned long lastPublish = 0;
-
-    if (millis() - lastPublish >= 5000)
-    {
-        publishState(state);
-        lastPublish = millis();
-    }
+    mqttLoop();        // Handle incoming MQTT messages
+    schedulerRun();    // Handle scheduled tasks
 }
