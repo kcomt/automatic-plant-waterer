@@ -1,6 +1,6 @@
-#include "watering.h"
-#include "config.h"
-#include "state.h"
+#include "devices/watering.h"
+#include "config/config.h"
+#include "models/state.h"
 #include "communication/mqtt.h"
 #include "scheduler.h"
 

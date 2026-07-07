@@ -2,12 +2,12 @@
 #include <Wire.h>
 #include <WiFiClientSecure.h>
 
-#include "config.h" 
-#include "state.h" 
-#include "display.h" 
+#include "config/config.h"
+#include "models/state.h"
+#include "devices/display.h"
 #include "communication/mqtt.h" // <-- Add this
 #include "scheduler.h"
-#include "sensors.h" 
+#include "devices/sensors.h"
 
 void setup()
 {
@@ -40,12 +40,12 @@ void setup()
     schedulerInit();
 
     // Should read sensors and update display at startup
-    //updateSensorReadings();
-    //applyState();
+    // updateSensorReadings();
+    // applyState();
 }
 
 void loop()
 {
-    mqttLoop();        // Handle incoming MQTT messages
-    schedulerRun();    // Handle scheduled tasks
+    mqttLoop();     // Handle incoming MQTT messages
+    schedulerRun(); // Handle scheduled tasks
 }

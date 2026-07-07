@@ -1,10 +1,10 @@
 #include "scheduler.h"
 
-#include "sensors.h"
-#include "watering.h"
-#include "display.h"
+#include "devices/sensors.h"
+#include "devices/watering.h"
+#include "devices/display.h"
 #include "communication/mqtt.h"
-#include "state.h"
+#include "models/state.h"
 
 // const unsigned long MONITOR_INTERVAL = 60UL * 60UL * 1000UL; // 60 minutes
 const unsigned long MONITOR_INTERVAL = 5UL * 1000UL; // 30 seconds

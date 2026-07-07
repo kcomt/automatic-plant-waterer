@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "state.h"
+#include "models/state.h"
 
 void setupMQTT();
 void mqttLoop();

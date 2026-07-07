@@ -1,13 +1,14 @@
-#include "display.h"
-#include "config.h"
-#include "state.h"
+#include "devices/display.h"
+#include "config/config.h"
+#include "models/state.h"
 #include <Arduino.h>
 
 static String topMessage = "";
 static String botMessage = "";
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-void updateLEDs() {
+void updateLEDs()
+{
   digitalWrite(YELLOW_LED, state.soilDry);
   digitalWrite(RED_LED, state.tankEmpty);
   digitalWrite(BLUE_LED, state.pumpRunning);
@@ -16,25 +17,33 @@ void updateLEDs() {
   digitalWrite(GREEN_LED, healthy);
 }
 
-void updateDisplay() {
+void updateDisplay()
+{
   String newTopMessage;
   String newBotMessage;
 
-  if (state.soilDry) {
+  if (state.soilDry)
+  {
     newTopMessage = "Soil Dry";
-  } else {
+  }
+  else
+  {
     newTopMessage = "Soil Ok";
   }
 
-  if (state.pumpRunning) {
+  if (state.pumpRunning)
+  {
     newBotMessage = "Watering";
-  } else {
+  }
+  else
+  {
     float waterLevelPercentage = (((WATER_CONTAINER_HEIGHT - state.waterDistance) / WATER_CONTAINER_HEIGHT) * 100);
     waterLevelPercentage = constrain(waterLevelPercentage, 0, 100);
     newBotMessage = "Tank: " + String((int)waterLevelPercentage) + "%";
   }
 
-  if (topMessage != newTopMessage || botMessage != newBotMessage) {
+  if (topMessage != newTopMessage || botMessage != newBotMessage)
+  {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print(newTopMessage);

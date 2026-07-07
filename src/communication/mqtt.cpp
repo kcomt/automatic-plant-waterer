@@ -6,7 +6,7 @@
 #include <ArduinoJson.h>
 
 #include "../scheduler.h"
-#include "../watering.h"
+#include "../devices/watering.h"
 
 void processCommand(const String &command);
 

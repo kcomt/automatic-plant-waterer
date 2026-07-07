@@ -1,6 +1,6 @@
-#include "sensors.h"
-#include "config.h"
-#include "state.h"
+#include "devices/sensors.h"
+#include "config/config.h"
+#include "models/state.h"
 #include <Arduino.h>
 
 #include <stdint.h> // or #include <cstdint>
