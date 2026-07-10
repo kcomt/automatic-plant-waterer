@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMqtt } from "./hooks/useMqtt";
 import SettingsModal from "./components/SettingsModal";
+import PlantHealth from "./components/PlantHealth";
+import DeviceStatus from "./components/DeviceStatus";
 import "./App.css";
 
-const DEFAULT_BROKER = "ws://localhost:9001";
+const DEFAULT_BROKER =
+  "wss://cea62e455cca42e98b0ad9bd6d02ea70.s1.eu.hivemq.cloud:8884/mqtt";
 
 function formatLastUpdate(date) {
   if (!date) return "No data yet";
@@ -224,165 +227,17 @@ function ModeCard({ isAutomatic, onToggle }) {
   );
 }
 
-const ACTIVITY_ICONS = {
-  pump_off: {
-    icon: "power_settings_new",
-    border: "border-[#002d1c]",
-    iconColor: "text-[#002d1c]",
-  },
-  pump_on: {
-    icon: "mode_fan",
-    border: "border-[#4de082]",
-    iconColor: "text-[#4de082]",
-  },
-  watered: {
-    icon: "opacity",
-    border: "border-[#4de082]",
-    iconColor: "text-[#4de082]",
-  },
-  moisture_low: {
-    icon: "trending_down",
-    border: "border-[#c1c8c2]",
-    iconColor: "text-[#717973]",
-  },
-  moisture_ok: {
-    icon: "trending_up",
-    border: "border-[#4de082]",
-    iconColor: "text-[#4de082]",
-  },
-  tank_low: {
-    icon: "water_drop",
-    border: "border-[#ba1a1a]",
-    iconColor: "text-[#ba1a1a]",
-  },
-  manual: {
-    icon: "touch_app",
-    border: "border-[#505f76]",
-    iconColor: "text-[#505f76]",
-  },
-};
-
-function ActivityFeed({ activities }) {
-  if (!activities.length) {
-    return (
-      <p className="text-[14px] text-[#717973] text-center py-8">
-        No recent activity.
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-[#c1c8c2]">
-      {activities.map((item) => {
-        const style = ACTIVITY_ICONS[item.type] ?? ACTIVITY_ICONS.moisture_low;
-        return (
-          <div key={item.id} className="flex gap-6 relative">
-            <div
-              className={`z-10 w-6 h-6 rounded-full bg-white border-2 ${style.border} flex items-center justify-center shrink-0`}
-            >
-              <span
-                className={`material-symbols-outlined text-[14px] ${style.iconColor}`}
-              >
-                {style.icon}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <p className="text-[16px] text-[#1a1c1a]">{item.message}</p>
-              <p className="text-[14px] text-[#505f76]">
-                {formatLastUpdate(item.time)}
-                {item.detail ? ` • ${item.detail}` : ""}
-              </p>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function App() {
   const [brokerUrl, setBrokerUrl] = useState(() => {
     return localStorage.getItem("mqttBroker") || DEFAULT_BROKER;
   });
   const [showSettings, setShowSettings] = useState(false);
   const [isAutomatic, setIsAutomatic] = useState(true);
-  const [activities, setActivities] = useState([]);
-  const [tick, setTick] = useState(0);
 
   const { plantState, connected, lastUpdate, publish } = useMqtt(brokerUrl);
 
-  // Refresh "X ago" timestamps every 30s
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Log activity events when plant state changes
-  const prevRef = {
-    pumpRunning: undefined,
-    soilDry: undefined,
-    tankEmpty: undefined,
-  };
-  useEffect(() => {
-    // We use a ref to compare previous vs current; this runs on every plantState change
-  }, []);
-
-  // Track state transitions for the activity feed
-  const [prevState, setPrevState] = useState(null);
-  useEffect(() => {
-    if (!lastUpdate) return;
-    const addActivity = (type, message, detail = "") => {
-      setActivities((prev) => [
-        {
-          id: Date.now() + Math.random(),
-          type,
-          message,
-          detail,
-          time: new Date(),
-        },
-        ...prev.slice(0, 19),
-      ]);
-    };
-
-    if (prevState === null) {
-      setPrevState(plantState);
-      return;
-    }
-
-    if (plantState.pumpRunning && !prevState.pumpRunning)
-      addActivity("pump_on", "Pump turned on", "Watering started");
-    if (!plantState.pumpRunning && prevState.pumpRunning)
-      addActivity("pump_off", "Pump turned off", "Watering cycle complete");
-    if (plantState.soilDry && !prevState.soilDry)
-      addActivity(
-        "moisture_low",
-        `Soil moisture low (${plantState.soilMoisturePercent}%)`,
-        "Threshold crossed",
-      );
-    if (!plantState.soilDry && prevState.soilDry)
-      addActivity(
-        "moisture_ok",
-        `Soil moisture recovered (${plantState.soilMoisturePercent}%)`,
-        "Above threshold",
-      );
-    if (plantState.tankEmpty && !prevState.tankEmpty)
-      addActivity("tank_low", "Water tank empty", "Refill needed");
-
-    setPrevState(plantState);
-  }, [plantState, lastUpdate]);
-
   function handleWaterNow() {
     publish("plant/command", { action: "water_now" });
-    setActivities((prev) => [
-      {
-        id: Date.now(),
-        type: "manual",
-        message: "Manual water command sent",
-        detail: "Via dashboard",
-        time: new Date(),
-      },
-      ...prev.slice(0, 19),
-    ]);
   }
 
   function handleSaveBroker(url) {
@@ -479,105 +334,17 @@ export default function App() {
 
         {/* Bottom section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-          {/* Activity feed */}
-          <div className="lg:col-span-2 glass-card rounded-xl p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-[20px] font-semibold leading-7 text-[#002d1c]">
-                Recent Activity
-              </h3>
-              <button
-                onClick={() => setActivities([])}
-                className="text-[12px] font-semibold tracking-widest text-[#505f76] hover:underline"
-              >
-                Clear
-              </button>
-            </div>
-            <ActivityFeed activities={activities} />
-          </div>
+          {/* Plant Health */}
+          <PlantHealth
+            tankEmpty={plantState.tankEmpty}
+            tankPercentage={plantState.tankPercentage}
+            soilDry={plantState.soilDry}
+            soilMoisturePercent={plantState.soilMoisturePercent}
+            pumpRunning={plantState.pumpRunning}
+          />
 
-          {/* Sensor detail panel */}
-          <div className="glass-card rounded-xl p-8 bg-gradient-to-br from-white to-[#f3f4f0]">
-            <h3 className="text-[20px] font-semibold leading-7 text-[#002d1c] mb-6">
-              Sensor Details
-            </h3>
-            <div className="space-y-5">
-              {/* Raw moisture */}
-              <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase">
-                  Raw ADC Value
-                </span>
-                <span className="text-[36px] font-bold leading-[44px] tracking-tight text-[#002d1c]">
-                  {plantState.soilMoistureRaw}
-                </span>
-              </div>
-
-              <div className="w-full h-px bg-[#c1c8c2]" />
-
-              {/* Water distance */}
-              <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase">
-                  Water Distance
-                </span>
-                <span className="text-[36px] font-bold leading-[44px] tracking-tight text-[#002d1c]">
-                  {plantState.waterDistance.toFixed(1)}
-                  <span className="text-[16px] font-normal text-[#505f76] ml-1">
-                    cm
-                  </span>
-                </span>
-              </div>
-
-              <div className="w-full h-px bg-[#c1c8c2]" />
-
-              {/* Alerts */}
-              <div className="flex flex-col gap-2">
-                <span className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase">
-                  Alerts
-                </span>
-                {!plantState.soilDry && !plantState.tankEmpty ? (
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#4de082]" />
-                    <span className="text-[14px] text-[#1bbf65] font-semibold">
-                      All systems normal
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {plantState.soilDry && (
-                      <div className="flex items-center gap-2 bg-[#ffdad6] rounded-lg px-3 py-2">
-                        <span className="material-symbols-outlined text-[#ba1a1a] text-[18px]">
-                          warning
-                        </span>
-                        <span className="text-[13px] font-semibold text-[#93000a]">
-                          Soil is dry
-                        </span>
-                      </div>
-                    )}
-                    {plantState.tankEmpty && (
-                      <div className="flex items-center gap-2 bg-[#ffdad6] rounded-lg px-3 py-2">
-                        <span className="material-symbols-outlined text-[#ba1a1a] text-[18px]">
-                          water_drop
-                        </span>
-                        <span className="text-[13px] font-semibold text-[#93000a]">
-                          Tank is empty
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* MQTT broker */}
-              <div className="w-full h-px bg-[#c1c8c2]" />
-              <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase">
-                  Broker
-                </span>
-                <span className="text-[12px] text-[#717973] break-all">
-                  {brokerUrl}
-                </span>
-              </div>
-            </div>
-          </div>
+          {/* Device status panel */}
+          <DeviceStatus connected={connected} lastUpdate={lastUpdate} />
         </div>
       </main>
 

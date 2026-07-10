@@ -91,12 +91,6 @@ body {
     border-color 0.2s ease;
 }
 
-.glass-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0px 10px 25px rgba(26, 67, 49, 0.08);
-  border-color: #a4d0b8;
-}
-
 .status-glow {
   box-shadow: 0 0 8px #4de082;
   animation: pulse-glow 2s infinite;
