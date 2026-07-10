@@ -6,7 +6,6 @@ const DEFAULT_BROKER =
 const MQTT_USERNAME = "plantwaterer";
 const MQTT_PASSWORD = "SuperSecretPassword123";
 const PLANT_STATE_TOPIC = "plant/state";
-const DEVICE_STATUS_TOPIC = "plant/status";
 
 const DEFAULT_STATE = {
   soilDry: false,
@@ -39,7 +38,6 @@ export function useMqtt(brokerUrl = DEFAULT_BROKER) {
       setBrokerConnected(true);
       client.subscribe(PLANT_STATE_TOPIC, { qos: 0 });
       // Subscribe to LWT status topic (retained — broker delivers last known state immediately)
-      client.subscribe(DEVICE_STATUS_TOPIC, { qos: 1 });
     });
 
     client.on("disconnect", () => {
@@ -59,18 +57,17 @@ export function useMqtt(brokerUrl = DEFAULT_BROKER) {
       const payload = message.toString();
       console.log("Received message:", topic, payload);
 
-      if (topic === DEVICE_STATUS_TOPIC) {
-        setDeviceOnline(payload === "online");
-        return;
-      }
-
       if (topic === PLANT_STATE_TOPIC) {
         try {
+          console.log("deviceOnline:", deviceOnline);
+
           const parsed = JSON.parse(payload);
           console.log("Received plant state:", parsed);
           setPlantState((prev) => ({ ...prev, ...parsed }));
           setLastUpdate(new Date());
+          setDeviceOnline(true);
         } catch {
+          console.log("Goes here");
           // malformed message — ignore
         }
       }
@@ -87,5 +84,7 @@ export function useMqtt(brokerUrl = DEFAULT_BROKER) {
     }
   }, []);
 
+  console.log("deviceOnline", deviceOnline);
+  console.log("plantState", plantState);
   return { plantState, brokerConnected, deviceOnline, lastUpdate, publish };
 }
