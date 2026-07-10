@@ -26,7 +26,11 @@ function StatusRow({ label, statusText, ok }) {
   );
 }
 
-export default function DeviceStatus({ connected, lastUpdate }) {
+export default function DeviceStatus({
+  brokerConnected,
+  deviceOnline,
+  lastUpdate,
+}) {
   return (
     <div className="glass-card rounded-xl p-8 bg-gradient-to-br from-white to-[#f3f4f0]">
       <div className="flex items-center justify-between mb-6">
@@ -40,14 +44,14 @@ export default function DeviceStatus({ connected, lastUpdate }) {
 
       <div className="divide-y divide-[#e2e3df]">
         <StatusRow
-          label="WiFi"
-          statusText={connected ? "Connected" : "Disconnected"}
-          ok={connected}
+          label="Broker"
+          statusText={brokerConnected ? "Connected" : "Disconnected"}
+          ok={brokerConnected}
         />
         <StatusRow
-          label="MQTT"
-          statusText={connected ? "Connected" : "Disconnected"}
-          ok={connected}
+          label="Device"
+          statusText={deviceOnline ? "Online" : "Offline"}
+          ok={deviceOnline}
         />
       </div>
 

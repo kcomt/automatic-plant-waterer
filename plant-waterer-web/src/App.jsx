@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMqtt } from "./hooks/useMqtt";
 import SettingsModal from "./components/SettingsModal";
 import PlantHealth from "./components/PlantHealth";
 import DeviceStatus from "./components/DeviceStatus";
+import SkeletonCard from "./components/SkeletonCard";
 import "./App.css";
 
 const DEFAULT_BROKER =
   "wss://cea62e455cca42e98b0ad9bd6d02ea70.s1.eu.hivemq.cloud:8884/mqtt";
 
 function formatLastUpdate(date) {
+  console.log("formatLastUpdate called with date:", date);
   if (!date) return "No data yet";
   const diffMs = Date.now() - date.getTime();
   const diffSec = Math.floor(diffMs / 1000);
@@ -234,7 +236,14 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [isAutomatic, setIsAutomatic] = useState(true);
 
-  const { plantState, connected, lastUpdate, publish } = useMqtt(brokerUrl);
+  const { plantState, brokerConnected, deviceOnline, lastUpdate, publish } =
+    useMqtt(brokerUrl);
+
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   function handleWaterNow() {
     publish("plant/command", { action: "water_now" });
@@ -260,10 +269,10 @@ export default function App() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 px-3 py-1 bg-[#f3f4f0] rounded-full">
             <span
-              className={`w-2 h-2 rounded-full ${connected ? "bg-[#4de082] status-glow" : "bg-[#ba1a1a]"}`}
+              className={`w-2 h-2 rounded-full ${brokerConnected ? "bg-[#4de082] status-glow" : "bg-[#ba1a1a]"}`}
             ></span>
             <span className="text-[12px] font-semibold tracking-widest text-[#1a1c1a]">
-              {connected ? "Online" : "Offline"}
+              {brokerConnected ? "Online" : "Offline"}
             </span>
           </div>
           <span className="text-[14px] text-[#505f76] hidden sm:inline">
@@ -307,35 +316,52 @@ export default function App() {
 
         {/* Dashboard cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-          <SoilMoistureCard
-            soilMoisturePercent={plantState.soilMoisturePercent}
-            soilDry={plantState.soilDry}
-          />
-          <WaterTankCard
-            tankPercentage={plantState.tankPercentage}
-            tankEmpty={plantState.tankEmpty}
-          />
-          <PumpCard
-            pumpRunning={plantState.pumpRunning}
-            onWaterNow={handleWaterNow}
-          />
-          <ModeCard
-            isAutomatic={isAutomatic}
-            onToggle={() => {
-              const next = !isAutomatic;
-              setIsAutomatic(next);
-              publish("plant/command", {
-                action: "set_mode",
-                mode: next ? "automatic" : "manual",
-              });
-            }}
-          />
+          {deviceOnline ? (
+            <SoilMoistureCard
+              soilMoisturePercent={plantState.soilMoisturePercent}
+              soilDry={plantState.soilDry}
+            />
+          ) : (
+            <SkeletonCard title="Soil Moisture" icon="humidity_low" />
+          )}
+          {deviceOnline ? (
+            <WaterTankCard
+              tankPercentage={plantState.tankPercentage}
+              tankEmpty={plantState.tankEmpty}
+            />
+          ) : (
+            <SkeletonCard title="Water Tank" icon="water_drop" />
+          )}
+          {deviceOnline ? (
+            <PumpCard
+              pumpRunning={plantState.pumpRunning}
+              onWaterNow={handleWaterNow}
+            />
+          ) : (
+            <SkeletonCard title="Pump Status" icon="mode_fan" />
+          )}
+          {deviceOnline ? (
+            <ModeCard
+              isAutomatic={isAutomatic}
+              onToggle={() => {
+                const next = !isAutomatic;
+                setIsAutomatic(next);
+                publish("plant/command", {
+                  action: "set_mode",
+                  mode: next ? "automatic" : "manual",
+                });
+              }}
+            />
+          ) : (
+            <SkeletonCard title="Operating Mode" icon="settings_suggest" />
+          )}
         </div>
 
         {/* Bottom section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
           {/* Plant Health */}
           <PlantHealth
+            loading={!deviceOnline}
             tankEmpty={plantState.tankEmpty}
             tankPercentage={plantState.tankPercentage}
             soilDry={plantState.soilDry}
@@ -344,7 +370,11 @@ export default function App() {
           />
 
           {/* Device status panel */}
-          <DeviceStatus connected={connected} lastUpdate={lastUpdate} />
+          <DeviceStatus
+            brokerConnected={brokerConnected}
+            deviceOnline={deviceOnline}
+            lastUpdate={lastUpdate}
+          />
         </div>
       </main>
 

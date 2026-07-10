@@ -6,6 +6,7 @@ const DEFAULT_BROKER =
 const MQTT_USERNAME = "plantwaterer";
 const MQTT_PASSWORD = "SuperSecretPassword123";
 const PLANT_STATE_TOPIC = "plant/state";
+const DEVICE_STATUS_TOPIC = "plant/status";
 
 const DEFAULT_STATE = {
   soilDry: false,
@@ -19,7 +20,8 @@ const DEFAULT_STATE = {
 
 export function useMqtt(brokerUrl = DEFAULT_BROKER) {
   const [plantState, setPlantState] = useState(DEFAULT_STATE);
-  const [connected, setConnected] = useState(false);
+  const [brokerConnected, setBrokerConnected] = useState(false);
+  const [deviceOnline, setDeviceOnline] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const clientRef = useRef(null);
 
@@ -34,19 +36,37 @@ export function useMqtt(brokerUrl = DEFAULT_BROKER) {
     clientRef.current = client;
 
     client.on("connect", () => {
-      setConnected(true);
+      setBrokerConnected(true);
       client.subscribe(PLANT_STATE_TOPIC, { qos: 0 });
+      // Subscribe to LWT status topic (retained — broker delivers last known state immediately)
+      client.subscribe(DEVICE_STATUS_TOPIC, { qos: 1 });
     });
 
-    client.on("disconnect", () => setConnected(false));
-    client.on("offline", () => setConnected(false));
-    client.on("error", () => setConnected(false));
+    client.on("disconnect", () => {
+      setBrokerConnected(false);
+      setDeviceOnline(false);
+    });
+    client.on("offline", () => {
+      setBrokerConnected(false);
+      setDeviceOnline(false);
+    });
+    client.on("error", () => {
+      setBrokerConnected(false);
+      setDeviceOnline(false);
+    });
 
     client.on("message", (topic, message) => {
-      console.log("Received message:", topic, message.toString());
+      const payload = message.toString();
+      console.log("Received message:", topic, payload);
+
+      if (topic === DEVICE_STATUS_TOPIC) {
+        setDeviceOnline(payload === "online");
+        return;
+      }
+
       if (topic === PLANT_STATE_TOPIC) {
         try {
-          const parsed = JSON.parse(message.toString());
+          const parsed = JSON.parse(payload);
           console.log("Received plant state:", parsed);
           setPlantState((prev) => ({ ...prev, ...parsed }));
           setLastUpdate(new Date());
@@ -67,5 +87,5 @@ export function useMqtt(brokerUrl = DEFAULT_BROKER) {
     }
   }, []);
 
-  return { plantState, connected, lastUpdate, publish };
+  return { plantState, brokerConnected, deviceOnline, lastUpdate, publish };
 }

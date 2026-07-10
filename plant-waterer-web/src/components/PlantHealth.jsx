@@ -29,12 +29,57 @@ function HealthRow({ icon, label, statusText, ok, warning }) {
 }
 
 export default function PlantHealth({
+  loading,
   tankEmpty,
   tankPercentage,
   soilDry,
   soilMoisturePercent,
   pumpRunning,
 }) {
+  if (loading) {
+    return (
+      <div className="lg:col-span-2 glass-card rounded-xl p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-[20px] font-semibold leading-7 text-[#002d1c]">
+            Plant Health
+          </h3>
+          <span className="material-symbols-outlined text-[#85b098] bg-[#c0edd3]/30 p-2 rounded-lg text-[24px]">
+            potted_plant
+          </span>
+        </div>
+        <div className="divide-y divide-[#e2e3df]">
+          {[
+            { icon: "water_drop", label: "Water Level" },
+            { icon: "humidity_low", label: "Soil Moisture" },
+            { icon: "mode_fan", label: "Pump" },
+          ].map(({ icon, label }) => (
+            <div key={label} className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[20px] text-[#85b098]">
+                  {icon}
+                </span>
+                <span className="text-[15px] text-[#414944]">{label}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#e2e3df] animate-pulse" />
+                <div className="h-3 w-20 bg-[#e2e3df] rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 flex items-center justify-between rounded-xl bg-[#f3f4f0] px-5 py-4">
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold tracking-widest text-[#505f76] uppercase mb-0.5">
+              Overall
+            </p>
+            <div className="h-7 w-32 bg-[#e2e3df] rounded animate-pulse" />
+          </div>
+          <div className="w-3 h-3 rounded-full bg-[#e2e3df] animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
   const waterOk = !tankEmpty;
   const moistureOk = !soilDry;
   const pumpWarning = pumpRunning;
