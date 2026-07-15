@@ -108,11 +108,20 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     {
         processCommand(message);
     }
+
+    if (strcmp(topic, "plant/config") == 0)
+    {
+        // Process the configuration message
+        Serial.println("Received config messagefrom subscription: ");
+        processConfig(message);
+    }
 }
 
 void processCommand(const String &command)
 {
-    Serial.print("Received command: ");
+    Serial.print("Received command:");
+    Serial.print(command.length());
+    Serial.println(command);
     if (command == "pump:on")
     {
         Serial.println("Pump ON command received.");
@@ -137,6 +146,35 @@ void processCommand(const String &command)
     }
 }
 
+void processConfig(const String &message)
+{
+    StaticJsonDocument<256> doc;
+
+    DeserializationError err = deserializeJson(doc, message);
+
+    if (err)
+    {
+        Serial.print("Failed to parse config: ");
+        Serial.println(err.c_str());
+        return;
+    }
+
+    config.id = doc["id"].as<String>();
+    config.name = doc["name"].as<String>();
+    config.dryThreshold = doc["dryThreshold"].as<int>();
+    config.wetThreshold = doc["wetThreshold"].as<int>();
+    config.wateringDuration = doc["wateringDuration"].as<int>();
+    config.publishInterval = doc["publishInterval"].as<int>();
+
+    Serial.println("Configuration updated:");
+    Serial.println("  ID: " + config.id);
+    Serial.println("  Name: " + config.name);
+    Serial.println("  Dry Threshold: " + String(config.dryThreshold));
+    Serial.println("  Wet Threshold: " + String(config.wetThreshold));
+    Serial.println("  Watering Duration: " + String(config.wateringDuration) + " ms");
+    Serial.println("  Publish Interval: " + String(config.publishInterval) + " ms");
+}
+
 void publishState(const PlantState &state)
 {
     if (!mqtt.connected())
@@ -155,7 +193,28 @@ void publishState(const PlantState &state)
     serializeJson(doc, payload);
 
     Serial.println("Publishing state: " + payload);
-    mqtt.publish("plant/state", payload.c_str());
+    mqtt.publish("plant/state", payload.c_str(), true);
+}
+
+void publishConfig(const PlantConfig &config)
+{
+    if (!mqtt.connected())
+        return;
+
+    JsonDocument doc;
+
+    doc["id"] = config.id;
+    doc["name"] = config.name;
+    doc["dryThreshold"] = config.dryThreshold;
+    doc["wetThreshold"] = config.wetThreshold;
+    doc["wateringDuration"] = config.wateringDuration;
+    doc["publishInterval"] = config.publishInterval;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    Serial.println("Publishing config: " + payload);
+    mqtt.publish("plant/config", payload.c_str(), true);
 }
 
 void publishResponse(

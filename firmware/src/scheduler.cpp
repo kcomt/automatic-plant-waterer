@@ -4,10 +4,8 @@
 #include "devices/watering.h"
 #include "devices/display.h"
 #include "communication/mqtt.h"
-#include "models/state.h"
-
-// const unsigned long MONITOR_INTERVAL = 60UL * 60UL * 1000UL; // 60 minutes
-const unsigned long MONITOR_INTERVAL = 5UL * 1000UL; // 30 seconds
+#include "models/plantState.h"
+#include "models/plantConfig.h"
 
 static unsigned long lastMonitor = 0;
 static unsigned long delayedMonitorAt = 0;
@@ -57,7 +55,7 @@ void schedulerRun()
 
     unsigned long now = millis();
 
-    if (now - lastMonitor >= MONITOR_INTERVAL)
+    if (now - lastMonitor >= config.publishInterval)
     {
         Serial.println("Performing scheduled monitoring");
         performMonitoring();

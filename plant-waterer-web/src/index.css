@@ -96,6 +96,16 @@ body {
   animation: pulse-glow 2s infinite;
 }
 
+.btn-primary {
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: #c1c8c2;
+}
+
 @keyframes pulse-glow {
   0% {
     opacity: 1;

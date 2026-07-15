@@ -1,6 +1,6 @@
 #include "devices/display.h"
 #include "config/config.h"
-#include "models/state.h"
+#include "models/plantState.h"
 #include <Arduino.h>
 
 static String topMessage = "";

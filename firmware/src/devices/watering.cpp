@@ -1,10 +1,10 @@
 #include "devices/watering.h"
 #include "config/config.h"
-#include "models/state.h"
+#include "models/plantState.h"
+#include "models/plantConfig.h"
 #include "communication/mqtt.h"
 #include "scheduler.h"
 
-constexpr unsigned long WATERING_DURATION = 3UL * 1000UL; // 10 seconds
 static unsigned long wateringStartTime = 0;
 
 void changePumpState(bool condition)
@@ -27,13 +27,13 @@ void updateWatering()
   Serial.print("Watering for: ");
   Serial.println(millis() - wateringStartTime);
   Serial.print("Needed: ");
-  Serial.println(WATERING_DURATION);
+  Serial.println(config.wateringDuration);
   Serial.print("Watering started at: ");
   Serial.println(wateringStartTime);
   Serial.print("Current time: ");
   Serial.println(millis());
 
-  if (millis() - wateringStartTime >= WATERING_DURATION)
+  if (millis() - wateringStartTime >= config.wateringDuration)
   {
     stopWatering();
   }

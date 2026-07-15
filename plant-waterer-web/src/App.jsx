@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMqtt } from "./hooks/useMqtt";
 import SettingsModal from "./components/SettingsModal";
 import PlantHealth from "./components/PlantHealth";
@@ -10,7 +10,6 @@ const DEFAULT_BROKER =
   "wss://cea62e455cca42e98b0ad9bd6d02ea70.s1.eu.hivemq.cloud:8884/mqtt";
 
 function formatLastUpdate(date) {
-  console.log("formatLastUpdate called with date:", date);
   if (!date) return "No data yet";
   const diffMs = Date.now() - date.getTime();
   const diffSec = Math.floor(diffMs / 1000);
@@ -135,7 +134,7 @@ function WaterTankCard({ tankPercentage, tankEmpty }) {
   );
 }
 
-function PumpCard({ pumpRunning, onWaterNow }) {
+function PumpCard({ pumpRunning, onWaterNow, loadingWatering }) {
   return (
     <div className="glass-card rounded-xl p-6 flex flex-col justify-between h-56">
       <div className="flex justify-between items-start">
@@ -164,66 +163,173 @@ function PumpCard({ pumpRunning, onWaterNow }) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <div className="flex justify-between items-center">
-          <span className="text-[14px] text-[#414944]">Power</span>
-          {/* Read-only indicator — pump is controlled by the IoT device */}
-          <span
-            className={`inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              pumpRunning ? "bg-[#4de082]" : "bg-[#c1c8c2]"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                pumpRunning ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </span>
-        </div>
         <button
           onClick={onWaterNow}
-          className="w-full bg-[#002d1c] text-white text-[12px] font-semibold tracking-widest uppercase py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
+          disabled={loadingWatering || pumpRunning}
+          className="btn-primary w-full bg-[#002d1c] text-white text-[12px] font-semibold tracking-widest uppercase py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
         >
-          <span className="material-symbols-outlined text-[18px]">
-            water_drop
-          </span>
-          Water Now
+          {!loadingWatering ? (
+            <span className="material-symbols-outlined text-[18px]">
+              water_drop
+            </span>
+          ) : (
+            <span className="material-symbols-outlined animate-spin">
+              progress_activity
+            </span>
+          )}
+          {loadingWatering ? "Watering..." : "Water Now"}
         </button>
       </div>
     </div>
   );
 }
 
-function ModeCard({ isAutomatic, onToggle }) {
+const PRESET_CONFIGS = [
+  {
+    id: "living-room",
+    name: "Living Room Plant",
+    dryThreshold: 1000,
+    wetThreshold: 1200,
+    wateringDuration: 5000,
+    publishInterval: 60000,
+  },
+  {
+    id: "outdoor",
+    name: "Outdoor Plant",
+    dryThreshold: 1000,
+    wetThreshold: 1200,
+    wateringDuration: 8000,
+    publishInterval: 30000,
+  },
+  {
+    id: "succulent",
+    name: "Succulent / Cactus",
+    dryThreshold: 1000,
+    wetThreshold: 1200,
+    wateringDuration: 2000,
+    publishInterval: 120000,
+  },
+  {
+    id: "testFast",
+    name: "Test Fast",
+    dryThreshold: 1000,
+    wetThreshold: 1200,
+    wateringDuration: 10000,
+    publishInterval: 1000,
+  },
+  {
+    id: "testMedium",
+    name: "Test Medium",
+    dryThreshold: 1000,
+    wetThreshold: 1200,
+    wateringDuration: 10000,
+    publishInterval: 30000,
+  },
+  {
+    id: "testSlow",
+    name: "Test Slow",
+    dryThreshold: 1000,
+    wetThreshold: 1200,
+    wateringDuration: 10000,
+    publishInterval: 120000,
+  },
+];
+
+function ModeCard({ selectedConfig, onConfigChange }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const cfg = selectedConfig;
+
   return (
-    <div className="glass-card rounded-xl p-6 flex flex-col justify-between h-56">
+    <div className="glass-card rounded-xl p-5 flex flex-col gap-2 h-56 relative">
       <div className="flex justify-between items-start">
-        <div>
-          <p className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase mb-1">
-            Operating Mode
-          </p>
-          <h3 className="text-[20px] font-semibold leading-7 text-[#002d1c] mt-2">
-            {isAutomatic ? "Automatic" : "Manual"}
-          </h3>
-        </div>
+        <p className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase">
+          Plant Configuration
+        </p>
         <span className="material-symbols-outlined text-[#85b098] bg-[#c0edd3]/30 p-2 rounded-lg text-[24px]">
           settings_suggest
         </span>
       </div>
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-[14px] text-[#414944]">Manual Switch</span>
+
+      {/* Dropdown */}
+      <div className="relative" ref={menuRef}>
         <button
-          onClick={onToggle}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-            !isAutomatic ? "bg-[#002d1c]" : "bg-[#c1c8c2]"
-          }`}
-          aria-pressed={!isAutomatic}
+          onClick={() => setOpen((v) => !v)}
+          className="w-full flex items-center justify-between bg-[#f3f4f0] hover:bg-[#eeeeeb] px-3 py-1.5 rounded-lg text-[13px] font-semibold text-[#002d1c] transition-colors"
         >
-          <span
-            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-              !isAutomatic ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
+          <span>{cfg.name}</span>
+          <span className="material-symbols-outlined text-[18px] text-[#505f76]">
+            {open ? "expand_less" : "expand_more"}
+          </span>
         </button>
+        {open && (
+          <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#e2e3df] rounded-lg shadow-lg z-20 overflow-hidden">
+            {PRESET_CONFIGS.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => {
+                  onConfigChange(preset);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2.5 text-[13px] transition-colors ${
+                  cfg.id === preset.id
+                    ? "bg-[#c0edd3]/40 font-semibold text-[#002d1c]"
+                    : "text-[#505f76] hover:bg-[#f3f4f0]"
+                }`}
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Config attributes */}
+      <div className="flex flex-col gap-1">
+        {/* Dry + Wet on same line */}
+        <div className="flex justify-between items-center gap-2">
+          <div className="flex items-center justify-between flex-1 gap-1">
+            <span className="text-[12px] text-[#505f76]">Dry</span>
+            <span className="text-[12px] font-semibold text-[#002d1c] bg-[#f3f4f0] px-2 py-0.5 rounded">
+              {cfg.dryThreshold}
+            </span>
+          </div>
+          <div className="w-px h-3 bg-[#e2e3df]" />
+          <div className="flex items-center justify-between flex-1 gap-1">
+            <span className="text-[12px] text-[#505f76]">Wet</span>
+            <span className="text-[12px] font-semibold text-[#002d1c] bg-[#f3f4f0] px-2 py-0.5 rounded">
+              {cfg.wetThreshold}
+            </span>
+          </div>
+        </div>
+        {[
+          {
+            label: "Watering duration",
+            value: `${cfg.wateringDuration / 1000}s`,
+          },
+          {
+            label: "Publish interval",
+            value: `${cfg.publishInterval / 1000}s`,
+          },
+        ].map(({ label, value }) => (
+          <div key={label} className="flex justify-between items-center">
+            <span className="text-[12px] text-[#505f76]">{label}</span>
+            <span className="text-[12px] font-semibold text-[#002d1c] bg-[#f3f4f0] px-2 py-0.5 rounded">
+              {value}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -234,10 +340,17 @@ export default function App() {
     return localStorage.getItem("mqttBroker") || DEFAULT_BROKER;
   });
   const [showSettings, setShowSettings] = useState(false);
-  const [isAutomatic, setIsAutomatic] = useState(true);
+  const [selectedConfig, setSelectedConfig] = useState({});
+  const [loadingWatering, setLoadingWatering] = useState(false);
 
-  const { plantState, brokerConnected, deviceOnline, lastUpdate, publish } =
-    useMqtt(brokerUrl);
+  const {
+    plantState,
+    brokerConnected,
+    deviceOnline,
+    lastUpdate,
+    lastResponse,
+    publish,
+  } = useMqtt(brokerUrl, selectedConfig, setSelectedConfig);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -245,14 +358,27 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    if (lastResponse) {
+      setLoadingWatering(false);
+      plantState.pumpRunning = true;
+    }
+  }, [lastResponse]);
+
   function handleWaterNow() {
-    publish("plant/command", { action: "water_now" });
+    publish("plant/command", "pump:on");
+    console.log("Loading watering set to true");
+    setLoadingWatering(true);
   }
 
   function handleSaveBroker(url) {
     localStorage.setItem("mqttBroker", url);
     setBrokerUrl(url);
   }
+
+  useEffect(() => {
+    console.log("Selected config changed:", selectedConfig);
+  }, [selectedConfig]);
 
   return (
     <div className="min-h-screen bg-[#f9faf6] text-[#1a1c1a] font-['Inter',sans-serif]">
@@ -336,20 +462,17 @@ export default function App() {
             <PumpCard
               pumpRunning={plantState.pumpRunning}
               onWaterNow={handleWaterNow}
+              loadingWatering={loadingWatering}
             />
           ) : (
             <SkeletonCard title="Pump Status" icon="mode_fan" />
           )}
           {deviceOnline ? (
             <ModeCard
-              isAutomatic={isAutomatic}
-              onToggle={() => {
-                const next = !isAutomatic;
-                setIsAutomatic(next);
-                publish("plant/command", {
-                  action: "set_mode",
-                  mode: next ? "automatic" : "manual",
-                });
+              selectedConfig={selectedConfig}
+              onConfigChange={(cfg) => {
+                setSelectedConfig(cfg);
+                publish("plant/config", cfg);
               }}
             />
           ) : (

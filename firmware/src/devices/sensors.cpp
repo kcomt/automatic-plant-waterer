@@ -1,6 +1,7 @@
 #include "devices/sensors.h"
 #include "config/config.h"
-#include "models/state.h"
+#include "models/plantState.h"
+#include "models/plantConfig.h"
 #include <Arduino.h>
 
 #include <stdint.h> // or #include <cstdint>
@@ -52,11 +53,11 @@ void updateSensorReadings()
   Serial.print("Soil moisture percent: ");
   Serial.println(state.soilMoisturePercent);
 
-  if (!state.soilDry && moisture <= 1000)
+  if (state.soilMoisturePercent < 30)
   {
     state.soilDry = true;
   }
-  if (state.soilDry && moisture >= 1200)
+  if (state.soilDry && state.soilMoisturePercent >= 70)
   {
     state.soilDry = false;
   }
@@ -64,8 +65,11 @@ void updateSensorReadings()
   // Update water distance
   state.waterDistance = measureWaterDistance();
 
+  float waterLevelPercentage = (((WATER_CONTAINER_HEIGHT - state.waterDistance) / WATER_CONTAINER_HEIGHT) * 100);
+  state.tankPercentage = constrain(waterLevelPercentage, 0, 100);
+
   // Update tank empty status
-  if (state.waterDistance > 15)
+  if (state.tankPercentage <= 15)
   {
     state.tankEmpty = true;
   }

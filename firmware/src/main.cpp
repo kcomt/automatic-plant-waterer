@@ -3,7 +3,7 @@
 #include <WiFiClientSecure.h>
 
 #include "config/config.h"
-#include "models/state.h"
+#include "models/plantState.h"
 #include "devices/display.h"
 #include "communication/mqtt.h" // <-- Add this
 #include "scheduler.h"
@@ -40,8 +40,27 @@ void setup()
     schedulerInit();
 
     // Should read sensors and update display at startup
-    // updateSensorReadings();
-    // applyState();
+    publishConfig(config);
+    performMonitoring();
+
+    // PRINT CONFIG
+    Serial.println("=== Plant Config ===");
+    Serial.print("Name: ");
+    Serial.println(config.name);
+
+    Serial.print("Dry Threshold: ");
+    Serial.println(config.dryThreshold);
+
+    Serial.print("Wet Threshold: ");
+    Serial.println(config.wetThreshold);
+
+    Serial.print("Watering Duration: ");
+    Serial.println(config.wateringDuration);
+
+    Serial.print("Publish Interval: ");
+    Serial.println(config.publishInterval);
+
+    Serial.println("====================");
 }
 
 void loop()
