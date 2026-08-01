@@ -258,7 +258,7 @@ function ModeCard({ selectedConfig, onConfigChange }) {
           Plant Configuration
         </p>
         <span className="material-symbols-outlined text-[#85b098] bg-[#c0edd3]/30 p-2 rounded-lg text-[24px]">
-          settings_suggest
+          settings
         </span>
       </div>
 
@@ -476,7 +476,7 @@ export default function App() {
               }}
             />
           ) : (
-            <SkeletonCard title="Operating Mode" icon="settings_suggest" />
+            <SkeletonCard title="Operating Mode" icon="settings" />
           )}
         </div>
 
