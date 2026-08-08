@@ -1,9 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useMqtt } from "./hooks/useMqtt";
 import SettingsModal from "./components/SettingsModal";
 import PlantHealth from "./components/PlantHealth";
 import DeviceStatus from "./components/DeviceStatus";
-import SkeletonCard from "./components/SkeletonCard";
+import SkeletonCard from "./components/cards/SkeletonCard";
+import SoilMoistureCard from "./components/cards/SoilMoistureCard";
+import WaterTankCard from "./components/cards/WaterTankCard";
+import PumpCard from "./components/cards/PumpCard";
+import ModeCard from "./components/cards/ModeCard";
 import "./App.css";
 
 const DEFAULT_BROKER =
@@ -17,322 +21,6 @@ function formatLastUpdate(date) {
   const diffMin = Math.floor(diffSec / 60);
   if (diffMin < 60) return `${diffMin} min${diffMin !== 1 ? "s" : ""} ago`;
   return date.toLocaleTimeString();
-}
-
-function SoilMoistureCard({ soilMoisturePercent, soilDry }) {
-  const label = soilDry
-    ? "🌵 Dry"
-    : soilMoisturePercent >= 70
-      ? "🌿 Wet"
-      : "💧 Moist";
-  const labelColor = soilDry
-    ? "text-[#ba1a1a]"
-    : soilMoisturePercent >= 70
-      ? "text-[#1bbf65]"
-      : "text-[#505f76]";
-  const dotColor = soilDry
-    ? "bg-[#ba1a1a]"
-    : soilMoisturePercent >= 70
-      ? "bg-[#4de082]"
-      : "bg-[#b7c8e1]";
-
-  return (
-    <div className="glass-card rounded-xl p-6 flex flex-col justify-between h-56 relative overflow-hidden">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase mb-1">
-            Soil Moisture
-          </p>
-          <h3 className="text-[36px] font-bold leading-[44px] tracking-tight text-[#002d1c]">
-            {soilMoisturePercent}%
-          </h3>
-        </div>
-        <span className="material-symbols-outlined text-[#85b098] bg-[#c0edd3]/30 p-2 rounded-lg text-[24px]">
-          humidity_low
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2 mt-4">
-        <span className={`w-2 h-2 rounded-full ${dotColor}`}></span>
-        <span
-          className={`text-[12px] font-semibold tracking-widest ${labelColor}`}
-        >
-          {label}
-        </span>
-      </div>
-
-      {/* Sparkline decorative */}
-      <div className="absolute bottom-0 left-0 w-full h-8 opacity-20 pointer-events-none">
-        <svg
-          className="w-full h-full"
-          viewBox="0 0 100 20"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0,15 Q10,5 20,12 T40,8 T60,15 T80,5 T100,10"
-            fill="none"
-            stroke="#3e6752"
-            strokeWidth="2"
-          />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function WaterTankCard({ tankPercentage, tankEmpty }) {
-  const label = tankEmpty
-    ? "⚠️ Empty"
-    : tankPercentage >= 60
-      ? "🪣 Full"
-      : tankPercentage >= 30
-        ? "🪣 Medium"
-        : "🪣 Low";
-  const fillColor = tankEmpty
-    ? "bg-[#ba1a1a]"
-    : tankPercentage >= 60
-      ? "bg-[#002d1c]"
-      : tankPercentage >= 30
-        ? "bg-[#505f76]"
-        : "bg-[#ba1a1a]";
-  const dotColor = tankEmpty
-    ? "bg-[#ba1a1a]"
-    : tankPercentage >= 60
-      ? "bg-[#4de082]"
-      : "bg-[#b7c8e1]";
-
-  return (
-    <div className="glass-card rounded-xl p-6 flex flex-col justify-between h-56 relative overflow-hidden">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase mb-1">
-            Water Tank
-          </p>
-          <h3 className="text-[36px] font-bold leading-[44px] tracking-tight text-[#002d1c]">
-            {tankPercentage.toFixed(0)}%
-          </h3>
-        </div>
-        <span className="material-symbols-outlined text-[#85b098] bg-[#c0edd3]/30 p-2 rounded-lg text-[24px]">
-          water_drop
-        </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${dotColor}`}></span>
-          <span className="text-[12px] font-semibold tracking-widest text-[#505f76]">
-            {label}
-          </span>
-        </div>
-        <div className="w-full bg-[#e8e8e5] h-1.5 rounded-full mt-2 overflow-hidden">
-          <div
-            className={`${fillColor} h-full rounded-full transition-all duration-700`}
-            style={{ width: `${Math.min(100, Math.max(0, tankPercentage))}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PumpCard({ pumpRunning, onWaterNow, loadingWatering }) {
-  return (
-    <div className="glass-card rounded-xl p-6 flex flex-col justify-between h-56">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase mb-1">
-            Pump Status
-          </p>
-          <h3
-            className={`text-[36px] font-bold leading-[44px] tracking-tight transition-colors ${
-              pumpRunning ? "text-[#1bbf65]" : "text-[#505f76]"
-            }`}
-          >
-            {pumpRunning ? "ON" : "OFF"}
-          </h3>
-        </div>
-        <span
-          className={`material-symbols-outlined p-2 rounded-lg text-[24px] transition-colors ${
-            pumpRunning
-              ? "text-[#1bbf65] bg-[#c0edd3]/40 animate-spin"
-              : "text-[#505f76] bg-[#e8e8e5]"
-          }`}
-          style={pumpRunning ? { animationDuration: "2s" } : {}}
-        >
-          mode_fan
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <button
-          onClick={onWaterNow}
-          disabled={loadingWatering || pumpRunning}
-          className="btn-primary w-full bg-[#002d1c] text-white text-[12px] font-semibold tracking-widest uppercase py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
-        >
-          {!loadingWatering ? (
-            <span className="material-symbols-outlined text-[18px]">
-              water_drop
-            </span>
-          ) : (
-            <span className="material-symbols-outlined animate-spin">
-              progress_activity
-            </span>
-          )}
-          {loadingWatering ? "Watering..." : "Water Now"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-const PRESET_CONFIGS = [
-  {
-    id: "living-room",
-    name: "Living Room Plant",
-    dryThreshold: 1000,
-    wetThreshold: 1200,
-    wateringDuration: 5000,
-    publishInterval: 60000,
-  },
-  {
-    id: "outdoor",
-    name: "Outdoor Plant",
-    dryThreshold: 1000,
-    wetThreshold: 1200,
-    wateringDuration: 8000,
-    publishInterval: 30000,
-  },
-  {
-    id: "succulent",
-    name: "Succulent / Cactus",
-    dryThreshold: 1000,
-    wetThreshold: 1200,
-    wateringDuration: 2000,
-    publishInterval: 120000,
-  },
-  {
-    id: "testFast",
-    name: "Test Fast",
-    dryThreshold: 1000,
-    wetThreshold: 1200,
-    wateringDuration: 10000,
-    publishInterval: 1000,
-  },
-  {
-    id: "testMedium",
-    name: "Test Medium",
-    dryThreshold: 1000,
-    wetThreshold: 1200,
-    wateringDuration: 10000,
-    publishInterval: 30000,
-  },
-  {
-    id: "testSlow",
-    name: "Test Slow",
-    dryThreshold: 1000,
-    wetThreshold: 1200,
-    wateringDuration: 10000,
-    publishInterval: 120000,
-  },
-];
-
-function ModeCard({ selectedConfig, onConfigChange }) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }
-    if (open) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  const cfg = selectedConfig;
-
-  return (
-    <div className="glass-card rounded-xl p-5 flex flex-col gap-2 h-56 relative">
-      <div className="flex justify-between items-start">
-        <p className="text-[12px] font-semibold tracking-widest text-[#505f76] uppercase">
-          Plant Configuration
-        </p>
-        <span className="material-symbols-outlined text-[#85b098] bg-[#c0edd3]/30 p-2 rounded-lg text-[24px]">
-          settings
-        </span>
-      </div>
-
-      {/* Dropdown */}
-      <div className="relative" ref={menuRef}>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-full flex items-center justify-between bg-[#f3f4f0] hover:bg-[#eeeeeb] px-3 py-1.5 rounded-lg text-[13px] font-semibold text-[#002d1c] transition-colors"
-        >
-          <span>{cfg.name}</span>
-          <span className="material-symbols-outlined text-[18px] text-[#505f76]">
-            {open ? "expand_less" : "expand_more"}
-          </span>
-        </button>
-        {open && (
-          <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#e2e3df] rounded-lg shadow-lg z-20 overflow-hidden">
-            {PRESET_CONFIGS.map((preset) => (
-              <button
-                key={preset.id}
-                onClick={() => {
-                  onConfigChange(preset);
-                  setOpen(false);
-                }}
-                className={`w-full text-left px-3 py-2.5 text-[13px] transition-colors ${
-                  cfg.id === preset.id
-                    ? "bg-[#c0edd3]/40 font-semibold text-[#002d1c]"
-                    : "text-[#505f76] hover:bg-[#f3f4f0]"
-                }`}
-              >
-                {preset.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Config attributes */}
-      <div className="flex flex-col gap-1">
-        {/* Dry + Wet on same line */}
-        <div className="flex justify-between items-center gap-2">
-          <div className="flex items-center justify-between flex-1 gap-1">
-            <span className="text-[12px] text-[#505f76]">Dry</span>
-            <span className="text-[12px] font-semibold text-[#002d1c] bg-[#f3f4f0] px-2 py-0.5 rounded">
-              {cfg.dryThreshold}
-            </span>
-          </div>
-          <div className="w-px h-3 bg-[#e2e3df]" />
-          <div className="flex items-center justify-between flex-1 gap-1">
-            <span className="text-[12px] text-[#505f76]">Wet</span>
-            <span className="text-[12px] font-semibold text-[#002d1c] bg-[#f3f4f0] px-2 py-0.5 rounded">
-              {cfg.wetThreshold}
-            </span>
-          </div>
-        </div>
-        {[
-          {
-            label: "Watering duration",
-            value: `${cfg.wateringDuration / 1000}s`,
-          },
-          {
-            label: "Publish interval",
-            value: `${cfg.publishInterval / 1000}s`,
-          },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex justify-between items-center">
-            <span className="text-[12px] text-[#505f76]">{label}</span>
-            <span className="text-[12px] font-semibold text-[#002d1c] bg-[#f3f4f0] px-2 py-0.5 rounded">
-              {value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export default function App() {
@@ -444,16 +132,18 @@ export default function App() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           {deviceOnline ? (
             <SoilMoistureCard
+              soilMoistureRaw={plantState.soilMoistureRaw}
               soilMoisturePercent={plantState.soilMoisturePercent}
-              soilDry={plantState.soilDry}
             />
           ) : (
             <SkeletonCard title="Soil Moisture" icon="humidity_low" />
           )}
           {deviceOnline ? (
             <WaterTankCard
+              waterDistance={plantState.waterDistance}
               tankPercentage={plantState.tankPercentage}
               tankEmpty={plantState.tankEmpty}
+              tankHeight={selectedConfig.tankHeight}
             />
           ) : (
             <SkeletonCard title="Water Tank" icon="water_drop" />

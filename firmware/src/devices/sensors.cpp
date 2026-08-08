@@ -38,8 +38,8 @@ void updateSensorReadings()
   state.soilMoistureRaw = moisture;
   state.soilMoisturePercent = map(
       moisture,
-      config.dryThreshold, // 1000 -> 0%
-      config.wetThreshold, // 1200 -> 100%
+      config.dryThreshold,
+      config.wetThreshold,
       0,
       100);
 

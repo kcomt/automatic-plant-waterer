@@ -13,11 +13,11 @@ void processCommand(const String &command);
 WiFiClientSecure wifiClient;
 PubSubClient mqtt(wifiClient); // No template arguments, just pass wifiClient
 
-// const char* WIFI_SSID = "CGA2121_kt9DAHP";
-// const char* WIFI_PASSWORD = "cg7MpJHy2j25Mj9FfZ";
+const char *WIFI_SSID = "CGA2121_kt9DAHP";
+const char *WIFI_PASSWORD = "cg7MpJHy2j25Mj9FfZ";
 
-const char *WIFI_SSID = "Wokwi-GUEST";
-const char *WIFI_PASSWORD = "";
+// const char *WIFI_SSID = "Wokwi-GUEST";
+// const char *WIFI_PASSWORD = "";
 
 const char *MQTT_HOST = "cea62e455cca42e98b0ad9bd6d02ea70.s1.eu.hivemq.cloud";
 const int MQTT_PORT = 8883;
@@ -187,6 +187,7 @@ void publishState(const PlantState &state)
     doc["soilDry"] = state.soilDry;
     doc["tankEmpty"] = state.tankEmpty;
     doc["pumpRunning"] = state.pumpRunning;
+    doc["waterDistance"] = state.waterDistance;
     doc["tankPercentage"] = state.tankPercentage;
 
     String payload;
