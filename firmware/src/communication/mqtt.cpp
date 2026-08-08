@@ -198,6 +198,7 @@ void publishState(const PlantState &state)
     doc["pumpRunning"] = state.pumpRunning;
     doc["waterDistance"] = state.waterDistance;
     doc["tankPercentage"] = state.tankPercentage;
+    doc["wateringCount"] = state.wateringCount;
 
     String payload;
     serializeJson(doc, payload);

@@ -25,25 +25,25 @@ void updateWatering()
   if (!state.pumpRunning)
     return;
 
-  Serial.print("Watering for: ");
-  Serial.println(millis() - wateringStartTime);
-  Serial.print("Needed: ");
-  Serial.println(config.wateringDuration);
-  Serial.print("Watering started at: ");
-  Serial.println(wateringStartTime);
-  Serial.print("Current time: ");
-  Serial.println(millis());
-
   if (millis() - wateringStartTime >= config.wateringDuration)
   {
+
+    Serial.println("Watering duration reached, stopping watering");
     stopWatering();
   }
 }
 
 void startWatering()
 {
+  Serial.println("Attempting to start watering");
   if (state.pumpRunning)
     return; // Already watering
+
+  if (state.wateringLocked)
+  {
+    Serial.println("Watering is locked, cannot start watering");
+    return; // Watering is locked
+  }
 
   unsigned long now = millis();
 
@@ -88,24 +88,7 @@ void stopWatering()
 
   changePumpState(false);
 
-  scheduleDelayedMonitoring(2000); // Read sensors in 2 s
+  scheduleDelayedMonitoring(10000); // Read sensors in 10 s
 
   publishState(state);
 }
-
-/*
-void updateWatering() {
-  if ((state.soilDry || state.manualWatering) && !state.tankEmpty) {
-    Serial.println("Soil Dry and tank not empty");
-    state.pumpRunning = true;
-    changePumpState(true);
-
-    if(state.manualWatering){
-      //do some logic
-      state.manualWatering = false;
-    }
-  } else {
-    state.pumpRunning = false;
-    changePumpState(false);
-  }
-}*/

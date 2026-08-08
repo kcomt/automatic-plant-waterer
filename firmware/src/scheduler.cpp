@@ -43,6 +43,7 @@ void scheduleDelayedMonitoring(unsigned long delayMs)
 
 void performMonitoring()
 {
+    Serial.println("Performing monitoring");
     updateSensorReadings();
     evaluateWatering();
     applyState();
