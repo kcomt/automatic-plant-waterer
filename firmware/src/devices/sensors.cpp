@@ -35,22 +35,24 @@ void updateSensorReadings()
   // Update soil moisture
   int moisture = analogRead(SOIL_SENSOR_PIN);
 
+  Serial.print("config.dryThreshold actual value: ");
+  Serial.println(config.dryThreshold);
+  Serial.print("config.wetThreshold actual value: ");
+  Serial.println(config.wetThreshold);
+
   state.soilMoistureRaw = moisture;
-  state.soilMoisturePercent = map(
+  long mappedPercent = map(
       moisture,
-      config.dryThreshold,
-      config.wetThreshold,
+      config.dryThreshold, // 3200 → 0%
+      config.wetThreshold, // 1150 → 100%
       0,
       100);
 
-  state.soilMoisturePercent = constrain(
-      state.soilMoisturePercent,
-      0,
-      100);
+  state.soilMoisturePercent = constrain(mappedPercent, 0, 100);
 
   Serial.print("Soil moisture raw: ");
   Serial.println(state.soilMoistureRaw);
-  Serial.print("Soil moisture percent: ");
+  Serial.print("Soil moisture percent: " + String(2) + " ");
   Serial.println(state.soilMoisturePercent);
 
   if (state.soilMoisturePercent < 30)
