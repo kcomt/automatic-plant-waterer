@@ -52,14 +52,14 @@ void updateSensorReadings()
 
   Serial.print("Soil moisture raw: ");
   Serial.println(state.soilMoistureRaw);
-  Serial.print("Soil moisture percent: " + String(2) + " ");
+  Serial.print("Soil moisture percent: ");
   Serial.println(state.soilMoisturePercent);
 
   if (state.soilMoisturePercent < 30)
   {
     state.soilDry = true;
   }
-  if (state.soilDry && state.soilMoisturePercent >= 70)
+  else
   {
     state.soilDry = false;
   }

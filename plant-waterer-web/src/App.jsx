@@ -8,6 +8,7 @@ import SoilMoistureCard from "./components/cards/SoilMoistureCard";
 import WaterTankCard from "./components/cards/WaterTankCard";
 import PumpCard from "./components/cards/PumpCard";
 import ModeCard from "./components/cards/ModeCard";
+import { PLANT_CONFIG_PRESETS } from "./config/plantConfigPresets";
 import "./App.css";
 
 const DEFAULT_BROKER =
@@ -28,18 +29,10 @@ export default function App() {
     return localStorage.getItem("mqttBroker") || DEFAULT_BROKER;
   });
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState(() => {
-    const saved = localStorage.getItem("plantConfig");
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [selectedConfig, setSelectedConfig] = useState(
+    () => PLANT_CONFIG_PRESETS.find((p) => p.id === "outdoor") ?? {},
+  );
   const [loadingWatering, setLoadingWatering] = useState(false);
-
-  // Only apply MQTT-received config if nothing is saved locally
-  const setSelectedConfigFromMqtt = (cfg) => {
-    setSelectedConfig((prev) =>
-      Object.keys(prev).length === 0 ? cfg : prev
-    );
-  };
 
   const {
     plantState,
@@ -48,7 +41,7 @@ export default function App() {
     lastUpdate,
     lastResponse,
     publish,
-  } = useMqtt(brokerUrl, selectedConfig, setSelectedConfigFromMqtt);
+  } = useMqtt(brokerUrl, selectedConfig, setSelectedConfig);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -172,7 +165,6 @@ export default function App() {
               selectedConfig={selectedConfig}
               onConfigChange={(cfg) => {
                 setSelectedConfig(cfg);
-                localStorage.setItem("plantConfig", JSON.stringify(cfg));
                 publish("plant/config", cfg, { retain: true });
               }}
             />

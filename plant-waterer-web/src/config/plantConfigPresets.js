@@ -22,25 +22,16 @@ export const PLANT_CONFIG_PRESETS = [
     name: "Succulent / Cactus",
     dryThreshold: 3200,
     wetThreshold: 1150,
-    wateringDuration: 4000,
+    wateringDuration: 2500,
     publishInterval: 15000,
     tankHeight: 120, // in mm
   },
   {
-    id: "testFast",
-    name: "Test Fast",
+    id: "water-plant",
+    name: "Water Plant",
     dryThreshold: 3200,
     wetThreshold: 1150,
-    wateringDuration: 4000,
-    publishInterval: 15000,
-    tankHeight: 120, // in mm
-  },
-  {
-    id: "testSlow",
-    name: "Test Slow",
-    dryThreshold: 3200,
-    wetThreshold: 1150,
-    wateringDuration: 4000,
+    wateringDuration: 2000,
     publishInterval: 15000,
     tankHeight: 120, // in mm
   },
