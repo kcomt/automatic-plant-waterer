@@ -28,8 +28,18 @@ export default function App() {
     return localStorage.getItem("mqttBroker") || DEFAULT_BROKER;
   });
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState({});
+  const [selectedConfig, setSelectedConfig] = useState(() => {
+    const saved = localStorage.getItem("plantConfig");
+    return saved ? JSON.parse(saved) : {};
+  });
   const [loadingWatering, setLoadingWatering] = useState(false);
+
+  // Only apply MQTT-received config if nothing is saved locally
+  const setSelectedConfigFromMqtt = (cfg) => {
+    setSelectedConfig((prev) =>
+      Object.keys(prev).length === 0 ? cfg : prev
+    );
+  };
 
   const {
     plantState,
@@ -38,7 +48,7 @@ export default function App() {
     lastUpdate,
     lastResponse,
     publish,
-  } = useMqtt(brokerUrl, selectedConfig, setSelectedConfig);
+  } = useMqtt(brokerUrl, selectedConfig, setSelectedConfigFromMqtt);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -162,7 +172,8 @@ export default function App() {
               selectedConfig={selectedConfig}
               onConfigChange={(cfg) => {
                 setSelectedConfig(cfg);
-                publish("plant/config", cfg);
+                localStorage.setItem("plantConfig", JSON.stringify(cfg));
+                publish("plant/config", cfg, { retain: true });
               }}
             />
           ) : (

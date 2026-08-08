@@ -8,6 +8,7 @@ void setupMQTT();
 void mqttLoop();
 
 bool isMQTTConnected();
+bool wasConfigReceived();
 
 void mqttCallback(char *topic, uint8_t *payload, unsigned int length);
 

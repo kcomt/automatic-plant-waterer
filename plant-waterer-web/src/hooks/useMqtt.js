@@ -102,11 +102,12 @@ export function useMqtt(
     };
   }, [brokerUrl]);
 
-  const publish = useCallback((topic, payload) => {
+  const publish = useCallback((topic, payload, options = {}) => {
     if (clientRef.current?.connected) {
       clientRef.current.publish(
         topic,
         typeof payload === "string" ? payload : JSON.stringify(payload),
+        options,
       );
     }
   }, []);

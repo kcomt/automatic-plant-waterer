@@ -13,6 +13,13 @@ void processCommand(const String &command);
 WiFiClientSecure wifiClient;
 PubSubClient mqtt(wifiClient); // No template arguments, just pass wifiClient
 
+static bool s_configReceived = false;
+
+bool wasConfigReceived()
+{
+    return s_configReceived;
+}
+
 const char *WIFI_SSID = "CGA2121_kt9DAHP";
 const char *WIFI_PASSWORD = "cg7MpJHy2j25Mj9FfZ";
 
@@ -158,6 +165,8 @@ void processConfig(const String &message)
         Serial.println(err.c_str());
         return;
     }
+
+    s_configReceived = true;
 
     config.id = doc["id"].as<String>();
     config.name = doc["name"].as<String>();

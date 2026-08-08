@@ -39,8 +39,18 @@ void setup()
 
     schedulerInit();
 
-    // Should read sensors and update display at startup
-    publishConfig(config);
+    // Wait briefly for retained config from broker before deciding to publish
+    unsigned long start = millis();
+    while (millis() - start < 2000)
+    {
+        mqttLoop();
+        delay(50);
+    }
+
+    if (!wasConfigReceived())
+    {
+        publishConfig(config);
+    }
     performMonitoring();
 
     // PRINT CONFIG
