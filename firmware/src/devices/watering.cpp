@@ -6,6 +6,7 @@
 #include "scheduler.h"
 
 static unsigned long wateringStartTime = 0;
+static unsigned long wateringWindowStart = 0; // start of the current 24 h window
 
 void changePumpState(bool condition)
 {
@@ -44,10 +45,37 @@ void startWatering()
   if (state.pumpRunning)
     return; // Already watering
 
+  unsigned long now = millis();
+
+  // Initialize window on first call
+  if (wateringWindowStart == 0)
+    wateringWindowStart = now;
+
+  // Reset counter every 24 hours
+  if (now - wateringWindowStart >= 86400000UL)
+  {
+    wateringWindowStart = now;
+    state.wateringCount = 0;
+    state.wateringLocked = false;
+  }
+
+  // Flood safeguard: block if daily limit reached
+  if (state.wateringCount >= (uint8_t)config.maxWateringsPerDay)
+  {
+    if (!state.wateringLocked)
+    {
+      state.wateringLocked = true;
+      Serial.println("Watering safeguard: daily limit reached, blocking pump");
+      publishState(state);
+    }
+    return;
+  }
+
   Serial.println("Starting watering");
 
   state.pumpRunning = true;
-  wateringStartTime = millis();
+  state.wateringCount++;
+  wateringStartTime = now;
 
   changePumpState(true);
 }

@@ -15,6 +15,7 @@ struct PlantConfig
 
     // Watering
     int wateringDuration = 5000; // ms
+    int maxWateringsPerDay = 3;  // flood safeguard
 
     // Monitoring
     int publishInterval = 30000; // 30 seconds
