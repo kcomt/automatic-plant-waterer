@@ -14,7 +14,7 @@ struct PlantConfig
     int wetThreshold = 1150;
 
     // Watering
-    int wateringDuration = 5000; // ms
+    int wateringDuration = 4000; // ms
     int maxWateringsPerDay = 3;  // flood safeguard
 
     // Monitoring
