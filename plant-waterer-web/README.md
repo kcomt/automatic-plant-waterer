@@ -1,16 +1,55 @@
-# React + Vite
+# Automatic Plant Waterer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An IoT-based automated plant watering system. An ESP32 monitors soil moisture and water tank level, automatically waters plants when needed, and publishes real-time data over MQTT. This web dashboard provides live monitoring and remote control.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Real-time monitoring** — soil moisture, water tank level, and pump status
+- **Auto-watering** — firmware triggers the pump when soil is too dry (configurable thresholds)
+- **Manual control** — "Water Now" button sends a command to the device via MQTT
+- **Plant presets** — Living Room, Outdoor, Succulent/Cactus, and test configurations
+- **Device status** — shows broker connection and device online/offline state
+- **Safety limits** — maximum waterings per day and tank-empty protection
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19** + **Vite**
+- **TailwindCSS 4**
+- **mqtt.js 5** (WebSocket connection to HiveMQ Cloud over TLS)
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+To build for production:
+
+```bash
+npm run build
+```
+
+## MQTT Topics
+
+| Topic            | Direction    | Description                               |
+| ---------------- | ------------ | ----------------------------------------- |
+| `plant/state`    | Device → Web | JSON with moisture %, tank %, pump status |
+| `plant/config`   | Device ↔ Web | Plant configuration settings              |
+| `plant/command`  | Web → Device | Commands: `pump:on`, `pump:off`           |
+| `plant/response` | Device → Web | Command acknowledgments                   |
+
+The broker URL can be changed in the Settings modal (saved to `localStorage`).
+
+## Firmware
+
+See the `firmware/` directory for the ESP32 PlatformIO project. Hardware used:
+
+- **ESP32** (esp32doit-devkit-v1)
+- **HC-SR04** ultrasonic sensor — water tank level
+- **Analog soil moisture sensor**
+- **16×2 I2C LCD** display
+- **Relay** module for pump control
+- **4 status LEDs** (green, yellow, red, blue)
