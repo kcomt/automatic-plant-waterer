@@ -6,7 +6,7 @@ export const PLANT_CONFIG_PRESETS = [
     wetThreshold: 1150,
     wateringDuration: 4000,
     publishInterval: 15000,
-    tankHeight: 120, // in mm
+    tankHeight: 12, // in cm
   },
   {
     id: "outdoor",
@@ -15,7 +15,7 @@ export const PLANT_CONFIG_PRESETS = [
     wetThreshold: 1150,
     wateringDuration: 5000,
     publishInterval: 15000,
-    tankHeight: 120, // in mm
+    tankHeight: 12, // in cm
   },
   {
     id: "succulent",
@@ -24,7 +24,7 @@ export const PLANT_CONFIG_PRESETS = [
     wetThreshold: 1150,
     wateringDuration: 2500,
     publishInterval: 15000,
-    tankHeight: 120, // in mm
+    tankHeight: 12, // in cm
   },
   {
     id: "water-plant",
@@ -33,6 +33,6 @@ export const PLANT_CONFIG_PRESETS = [
     wetThreshold: 1150,
     wateringDuration: 2000,
     publishInterval: 15000,
-    tankHeight: 120, // in mm
+    tankHeight: 12, // in cm
   },
 ];

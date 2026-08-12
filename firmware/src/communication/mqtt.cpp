@@ -20,11 +20,11 @@ bool wasConfigReceived()
     return s_configReceived;
 }
 
-const char *WIFI_SSID = "CGA2121_kt9DAHP";
-const char *WIFI_PASSWORD = "cg7MpJHy2j25Mj9FfZ";
+// const char *WIFI_SSID = "CGA2121_kt9DAHP";
+// const char *WIFI_PASSWORD = "cg7MpJHy2j25Mj9FfZ";
 
-// const char *WIFI_SSID = "Wokwi-GUEST";
-// const char *WIFI_PASSWORD = "";
+const char *WIFI_SSID = "Wokwi-GUEST";
+const char *WIFI_PASSWORD = "";
 
 const char *MQTT_HOST = "cea62e455cca42e98b0ad9bd6d02ea70.s1.eu.hivemq.cloud";
 const int MQTT_PORT = 8883;
@@ -220,6 +220,7 @@ void publishConfig(const PlantConfig &config)
     doc["wetThreshold"] = config.wetThreshold;
     doc["wateringDuration"] = config.wateringDuration;
     doc["publishInterval"] = config.publishInterval;
+    doc["tankHeight"] = config.tankHeight;
 
     String payload;
     serializeJson(doc, payload);
